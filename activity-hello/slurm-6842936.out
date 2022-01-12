@@ -1,0 +1,2 @@
+g++ -O3 -std=c++11 -fPIC -Xassembler -mrelax-relocations=no   -c -o hello.o hello.cpp
+g++ -fPIE hello.o -o hello
