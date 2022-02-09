@@ -2,6 +2,9 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <mutex>
+#include <thread>
+#include <map>
 
 #include "Dictionary.cpp"
 #include "MyHashtable.cpp"
@@ -45,7 +48,15 @@ std::vector<std::vector<std::string>> tokenizeLyrics(const std::vector<std::stri
   return ret;
 }
 
-
+void readFile(std::vector<std::string>& content, Dictionary<std::string, int>& dict, std::map<std::string, std::mutex>& mutMap){
+  std::cout<<"I'm inside the readFile function"<<std::endl;
+  for(auto& w:content){
+    std::lock_guard<std::mutex> lg(mutMap[w]);
+    int count = dict.get(w);
+    count++;
+    dict.set(w,count);
+  }
+}
 
 int main(int argc, char **argv)
 {
@@ -73,17 +84,20 @@ int main(int argc, char **argv)
   MyHashtable<std::string, int> ht;
   Dictionary<std::string, int>& dict = ht;
 
+  std::map<std::string, std::mutex> mutMap;
+  std::vector<std::thread> threads;
+  for(auto & fileContent:wordmap){
+    std::thread thrd(readFile, std::ref(fileContent),std::ref(dict),std::ref(mutMap));
+    threads.push_back(std::move(thrd));
+  }
 
-
-  // write code here
-
-
-
-
-
-
-
-
+  for(auto & t:threads){
+    if(t.joinable()){
+      t.join();
+    }else{
+      std::cout<<"Something went wrong"<<std::endl;
+    }
+  }
 
   /*
   // Check Hash Table Values 
