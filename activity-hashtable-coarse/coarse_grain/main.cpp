@@ -48,12 +48,13 @@ std::vector<std::vector<std::string>> tokenizeLyrics(const std::vector<std::stri
   return ret;
 }
 
-void readFile(std::vector<std::string>& content, Dictionary<std::string, int>& dict, std::map<std::string, std::mutex>& mutMap){
-  std::cout<<"I'm inside the readFile function"<<std::endl;
+void readFile(std::vector<std::string>& content, Dictionary<std::string, int>& dict, std::map<std::string, std::mutex>& mutMap, std::mutex& mapMut){
   for(auto& w:content){
+    mapMut.lock();
     std::lock_guard<std::mutex> lg(mutMap[w]);
+    mapMut.unlock();
     int count = dict.get(w);
-    count++;
+    ++count;
     dict.set(w,count);
   }
 }
@@ -84,10 +85,13 @@ int main(int argc, char **argv)
   MyHashtable<std::string, int> ht;
   Dictionary<std::string, int>& dict = ht;
 
+  std::mutex mapMut;
   std::map<std::string, std::mutex> mutMap;
   std::vector<std::thread> threads;
+
+  auto start = std::chrono::steady_clock::now();
   for(auto & fileContent:wordmap){
-    std::thread thrd(readFile, std::ref(fileContent),std::ref(dict),std::ref(mutMap));
+    std::thread thrd(readFile, std::ref(fileContent),std::ref(dict),std::ref(mutMap),std::ref(mapMut));
     threads.push_back(std::move(thrd));
   }
 
@@ -98,7 +102,10 @@ int main(int argc, char **argv)
       std::cout<<"Something went wrong"<<std::endl;
     }
   }
+  auto stop = std::chrono::steady_clock::now();
+  std::chrono::duration<double> elapsed = stop - start;
 
+  std::cerr<<elapsed.count()<<"\n";
   /*
   // Check Hash Table Values 
   //(you can uncomment, but this must be commented out for tests)
