@@ -7,6 +7,7 @@
 #include <vector>
 #include <mutex>
 #include <shared_mutex>
+#include <deque>
 
 template<class K, class V>
 struct Node {
@@ -187,7 +188,6 @@ public:
     for(unsigned int i=0;i<this->bucketMutexes.size();i++){
       this->bucketMutexes.at(i).lock();
     }
-    this->bucketMutexes.empty();
     this->bucketMutexes.resize(this->capacity);
     std::cout<<this->bucketMutexes.size()<<std::endl;
     // for(unsigned int i=0;i<this->capacity;i++){
