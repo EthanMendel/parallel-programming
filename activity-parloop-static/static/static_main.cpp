@@ -46,7 +46,7 @@ int main(int argc, char* argv[]) {
     double sum = 0;
     for (unsigned int i = 0;i < numThreads;i++) {
       int start = i * perThread;
-      int end = start + perThread - 1;
+      int end = start + perThread;
       if (i + 1 == numThreads) {
         end += n % numThreads;
       }
@@ -72,7 +72,7 @@ int main(int argc, char* argv[]) {
           [&](double tls) -> void {
           sum += tls;
         }
-      )
+      );
     }
     auto eTime = std::chrono::system_clock::now();
     std::chrono::duration<double> tTime = eTime - sTime;
