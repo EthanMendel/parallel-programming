@@ -6,7 +6,6 @@
 #include <iostream>
 #include <vector>
 #include <mutex>
-#include <shared_mutex>
 #include <deque>
 
 template<class K, class V>
@@ -32,9 +31,9 @@ protected:
   int count;
   double loadFactor;
   std::vector<Node<K,V>*> table;
-  std::deque<std::mutex> bucketMutexes;
-  std::mutex globalMutex;
+  std::vector<std::unique_ptr<std::mutex>> bucketMutexes;
 
+ 
   struct hashtable_iter : public dict_iter {
     MyHashtable& mt;
     int bucket;
@@ -99,9 +98,8 @@ protected:
     }
     //It is important to swap because we want the nodes in this and in
     //temp_table to be swapped so as to free the memory appropriately.
-    std::unique_lock lock(globalMutex);
     for(unsigned int i=0;i<this->bucketMutexes.size();i++){
-      this->bucketMutexes.at(i).lock();
+      (*this->bucketMutexes.at(i).get()).lock();
     }
     std::swap(this->capacity, temp_table.capacity);
     std::swap(this->table, temp_table.table); 
@@ -114,7 +112,6 @@ public:
    * @return node of type Node at key
    */
   virtual V get(const K& key) const {
-    std::shared_lock lock(globalMutex);
     std::size_t index = std::hash<K>{}(key) % this->capacity;
     index = index < 0 ? index + this->capacity : index;
     const Node<K,V>* node = this->table[index];
@@ -133,10 +130,9 @@ public:
    * @param value new value of node
    */
   virtual void set(const K& key, const V& value) {
-    std::shared_lock lock(globalMutex);
     std::size_t index = std::hash<K>{}(key) % this->capacity;
     index = index < 0 ? index + this->capacity : index;
-    std::unique_lock buckLock(this->bucketMutexes.at(index));
+    std::unique_lock buckLock((*this->bucketMutexes.at(index).get()));
     Node<K,V>* node = this->table[index];
     
     while (node != nullptr) {
@@ -164,10 +160,13 @@ public:
   virtual void deleteKey(const K& key) {
   }
 
-  MyHashtable(): MyHashtable(100000, 10.0) { fillBucketMutex(); }
-  MyHashtable(int capacity): MyHashtable(capacity, 10.0) { fillBucketMutex(); }
+  MyHashtable(): MyHashtable(100000, 10.0) { 
+    fillBucketMutex();
+  }
+  MyHashtable(int capacity): MyHashtable(capacity, 10.0) { 
+    fillBucketMutex(); 
+  }
   MyHashtable(int capacity, double loadFactor): capacity(capacity), count(0), loadFactor(loadFactor) {
-
     this->table.resize(capacity, nullptr);
     fillBucketMutex();
   }
@@ -184,16 +183,13 @@ public:
   }
 
   void fillBucketMutex(){
-    std::unique_lock lock(globalMutex);
     for(unsigned int i=0;i<this->bucketMutexes.size();i++){
-      this->bucketMutexes.at(i).lock();
+      (*this->bucketMutexes.at(i).get()).lock();
     }
-    this->bucketMutexes.resize(this->capacity);
-    std::cout<<this->bucketMutexes.size()<<std::endl;
-    // for(unsigned int i=0;i<this->capacity;i++){
-    //   std::mutex m;
-    //   std::cout<<this->bucketMutexes.at(i)<<std::endl;
-    // }
+    for(unsigned int i=0;i<this->capacity;i++){
+      std::unique_ptr<std::mutex> upm;
+      this->bucketMutexes.push_back(std::move(upm));
+    }
   }
 
   virtual std::unique_ptr<dict_iter> realBegin() {
