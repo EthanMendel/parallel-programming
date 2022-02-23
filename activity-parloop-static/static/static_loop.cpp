@@ -50,9 +50,16 @@ public:
 	       std::function<void(TLS&)> after
 	       ) {
     TLS tls;
-    before(tls);    
+    before(tls);
+    std::vector<std::thread> threads;
     for (size_t i=beg; i<end; i+= increment) {
-      f(i, tls);
+      std::thread thrd(f,std::ref(i),std::ref(tls));
+      threads.push_back(std::move(thrd));
+    }
+    for(size_t j=0; j<threads.size();j++){
+      if(threads.at(j).joinable()){
+        threads.at(j).join();
+      }
     }
     after(tls);
   }
