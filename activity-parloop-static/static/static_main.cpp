@@ -52,28 +52,34 @@ int main(int argc, char* argv[]) {
       if (i + 1 == numThreads) {
         end += n % numThreads;
       }
-      sl.parfor<double>(start, end, 1,
-        [&](double& tls) -> void {
-          tls = 0;
+      sl.parfor<std::vector<double>>(start, end, 1,
+        [&](std::vector<double>& tls) -> void {
+          for(int j=0;j<(end-start);j++){
+	    tls.push_back(0);
+	  }
         },
-        [&](int i, double& tls) -> void {
+        [&](int i, std::vector<double>& tls) -> void {
           double num = (a + i + .5) * (lead);
           if (funcID == 1) {
-            tls += f1(num, intensity);
+            tls.at(i) += f1(num, intensity);
           }
           else if (funcID == 2) {
-            tls += f2(num, intensity);
+            tls.at(i) += f2(num, intensity);
           }
           else if (funcID == 3) {
-            tls += f3(num, intensity);
+            tls.at(i) += f3(num, intensity);
           }
           else {
-            tls += f4(num, intensity);
+            tls.at(i) += f4(num, intensity);
           }
         },
-          [&](double tls) -> void {
+          [&](std::vector<double> tls) -> void {
+	  double locSum = 0;
+          for(int j=0;j<tls.size();j++){
+            locSum += tls.at(j);
+	  }
 	  std::lock_guard<std::mutex> lg(m);
-          sum += tls;
+          sum += locSum;
         }
       );
     }

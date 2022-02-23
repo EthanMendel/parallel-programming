@@ -57,9 +57,9 @@ public:
       std::thread thrd(f,std::ref(i),std::ref(tls));
       threads.push_back(std::move(thrd));
     }
-    for(size_t j=0; j<threads.size();j++){
-      if(threads.at(j).joinable()){
-        threads.at(j).join();
+    for(auto& thrd : threads){
+      if(thrd.joinable()){
+        thrd.join();
       }
     }
     after(tls);
