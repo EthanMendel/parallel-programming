@@ -5,6 +5,7 @@
 #include <chrono>
 #include <cmath>
 #include "static_loop.cpp"
+#include <mutex>
 
 
 #ifdef __cplusplus
@@ -44,9 +45,10 @@ int main(int argc, char* argv[]) {
     int perThread = int(n / numThreads);
     double lead = (b - a) / n;
     double sum = 0;
+    std::mutex m;
     for (unsigned int i = 0;i < numThreads;i++) {
       int start = i * perThread;
-      int end = start + perThread;
+      int end = start + perThread - 1;
       if (i + 1 == numThreads) {
         end += n % numThreads;
       }
@@ -70,6 +72,7 @@ int main(int argc, char* argv[]) {
           }
         },
           [&](double tls) -> void {
+	  std::lock_guard<std::mutex> lg(m);
           sum += tls;
         }
       );

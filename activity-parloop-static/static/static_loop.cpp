@@ -2,6 +2,7 @@
 #define __STATIC_LOOP_H
 
 #include <functional>
+#include <thread>
 
 class StaticLoop {
 private:
