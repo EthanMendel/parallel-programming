@@ -6,7 +6,6 @@
 #include <iostream>
 #include <vector>
 #include <mutex>
-#include <deque>
 
 template<class K, class V>
 struct Node {
@@ -98,14 +97,25 @@ protected:
     }
     //It is important to swap because we want the nodes in this and in
     //temp_table to be swapped so as to free the memory appropriately.
+    std::vector<std::lock_guard<std::mutex>> lgs;
     for(unsigned int i=0;i<this->bucketMutexes.size();i++){
-      (*this->bucketMutexes.at(i).get()).lock();
+      std::lock_guard lg(*this->bucketMutexes.at(i).get());
+      lgs.push_back(std::move(lg));
     }
     std::swap(this->capacity, temp_table.capacity);
     std::swap(this->table, temp_table.table); 
   }
 
 public:
+  virtual void increment(const K& key) {
+    std::size_t index = std::hash<K>{}(key) % this->capacity;
+    index = index < 0 ? index + this->capacity : index;
+    std::lock_guard<std::mutex> buckLock((*this->bucketMutexes.at(index).get()));
+    auto count = this->get(key);
+    ++count;
+    this->set(key,count);
+  }
+
   /**
    * Returns the node at key
    * @param key key of node to get
@@ -132,7 +142,6 @@ public:
   virtual void set(const K& key, const V& value) {
     std::size_t index = std::hash<K>{}(key) % this->capacity;
     index = index < 0 ? index + this->capacity : index;
-    std::unique_lock buckLock((*this->bucketMutexes.at(index).get()));
     Node<K,V>* node = this->table[index];
     
     while (node != nullptr) {

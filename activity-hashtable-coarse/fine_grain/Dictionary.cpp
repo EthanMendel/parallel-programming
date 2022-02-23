@@ -43,7 +43,9 @@ public:
       return ptr->operator*();
     }
   };
-  
+
+  virtual void increment(const K& key) = 0;
+
   /**
    * Returns the value stored for key
    * @param key key of node to get

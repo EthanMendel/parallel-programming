@@ -46,10 +46,8 @@ std::vector<std::vector<std::string>> tokenizeLyrics(const std::vector<std::stri
   return ret;
 }
 
-void incrementWord(std::string& w, Dictionary<std::string, int>& dict){
-    int count = dict.get(w);
-    ++count;
-    dict.set(w, count);
+void increment(std::string& w, Dictionary<std::string, int>& dict){
+  dict.increment(w);
 }
 
 int main(int argc, char **argv)
@@ -83,7 +81,7 @@ int main(int argc, char **argv)
   std::vector<std::thread> threads;
   for(auto & fileContent:wordmap){
     for(auto & w: fileContent){
-      std::thread thrd(incrementWord, std::ref(w), std::ref(dict));
+      std::thread thrd(increment, std::ref(w),std::ref(dict));
       threads.push_back(std::move(thrd));
     }
   }
