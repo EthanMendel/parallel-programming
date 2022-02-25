@@ -42,47 +42,32 @@ int main(int argc, char* argv[]) {
   else {
     auto sTime = std::chrono::system_clock::now();
     StaticLoop sl;
-    int perThread = int(n / numThreads);
+    sl.setThreads(numThreads);
     double lead = (b - a) / n;
     double sum = 0;
-    std::mutex m;
-    for (unsigned int i = 0;i < numThreads;i++) {
-      int start = i * perThread;
-      int end = start + perThread - 1;
-      if (i + 1 == numThreads) {
-        end += n % numThreads;
-      }
-      sl.parfor<std::vector<double>>(start, end, 1,
+      sl.parfor<std::vector<double>>(0,n, 1,
         [&](std::vector<double>& tls) -> void {
-          for(int j=0;j<(end-start);j++){
-	    tls.push_back(0);
-	  }
+	  tls.push_back(0);
         },
-        [&](int i, std::vector<double>& tls) -> void {
-          double num = (a + i + .5) * (lead);
+        [&](int j, std::vector<double>& tls, int k) -> void {
+	  double num = (a + j + .5) * (lead);
           if (funcID == 1) {
-            tls.at(i) += f1(num, intensity);
+            tls.at(k) += f1(num, intensity);
           }
           else if (funcID == 2) {
-            tls.at(i) += f2(num, intensity);
+            tls.at(k) += f2(num, intensity);
           }
           else if (funcID == 3) {
-            tls.at(i) += f3(num, intensity);
+            tls.at(k) += f3(num, intensity);
           }
           else {
-            tls.at(i) += f4(num, intensity);
+            tls.at(k) += f4(num, intensity);
           }
         },
-          [&](std::vector<double> tls) -> void {
-	  double locSum = 0;
-          for(int j=0;j<tls.size();j++){
-            locSum += tls.at(j);
-	  }
-	  std::lock_guard<std::mutex> lg(m);
-          sum += locSum;
+          [&](int k, std::vector<double> tls) -> void {
+          sum += tls.at(k);
         }
       );
-    }
     auto eTime = std::chrono::system_clock::now();
     std::chrono::duration<double> tTime = eTime - sTime;
     std::cerr << tTime.count();

@@ -8,10 +8,12 @@ class StaticLoop {
 private:
   // @brief you will want to have class member to store the number of threads
   // add a public setter function for this member.
-
+  int numThreads;
 public:
   // @breif write setters here.
-
+  void setThreads(int n){
+    this->numThreads = n;
+  }
 
 
   /// @brief execute the function f multiple times with different
@@ -47,14 +49,26 @@ public:
   template<typename TLS>
   void parfor (size_t beg, size_t end, size_t increment,
 	       std::function<void(TLS&)> before,
-	       std::function<void(int, TLS&)> f,
-	       std::function<void(TLS&)> after
+	       std::function<void(int, TLS&, int)> f,
+	       std::function<void(int, TLS&)> after
 	       ) {
     TLS tls;
-    before(tls);
+    for(int i=0;i<numThreads;i++){
+      before(tls);
+    }
     std::vector<std::thread> threads;
-    for (size_t i=beg; i<end; i+= increment) {
-      std::thread thrd(f,std::ref(i),std::ref(tls));
+    int perThread = int(end/numThreads);
+    for(int i=0;i<numThreads;i++){
+      int st = i*perThread;
+      int en = st + perThread;
+      if(i+1 == numThreads){
+        end += end % numThreads;
+      }
+      std::thread thrd([&](int s,int e,TLS& tls,int k,std::function<void(int,TLS&,int)> fu)->void {
+        for(int j=s;j<e;j++){
+          fu(j,tls,k);
+        }	      
+      },st,en,std::ref(tls),i,f);
       threads.push_back(std::move(thrd));
     }
     for(auto& thrd : threads){
@@ -62,7 +76,9 @@ public:
         thrd.join();
       }
     }
-    after(tls);
+    for(int i=0;i<numThreads;i++){
+      after(i,tls);
+    }
   }
   
 };
