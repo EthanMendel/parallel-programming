@@ -1,17 +1,19 @@
-#ifndef __DYNAMIC_LOOP_H
-#define __DYNAMIC_LOOP_H
+#ifndef __STATIC_LOOP_H
+#define __STATIC_LOOP_H
 
 #include <functional>
+#include <thread>
 
-class DynamicLoop {
+class StaticLoop {
 private:
-  // @brief you will want to have class members to store the number of threads
-  // and the desired granularity. Add a public setter functions for these
-  // class members.
-
+  // @brief you will want to have class member to store the number of threads
+  // add a public setter function for this member.
+  int numThreads;
 public:
   // @breif write setters here.
-
+  void setThreads(int n) {
+    this->numThreads = n;
+  }
 
 
   /// @brief execute the function f multiple times with different
@@ -20,9 +22,9 @@ public:
   /// f will be executed multiple times with parameters starting at
   /// beg, no greater than end, in inc increment. These execution may
   /// be in parallel
-  void parfor (size_t beg, size_t end, size_t inc,
-	       std::function<void(int)> f) {
-    for (size_t i=beg; i<end; i+= inc) {
+  void parfor(size_t beg, size_t end, size_t inc,
+    std::function<void(int)> f) {
+    for (size_t i = beg; i < end; i += inc) {
       f(i);
     }
   }
@@ -45,19 +47,45 @@ public:
   /// Once the iterations are complete, each thread will execute after
   /// on the TLS object. No two thread can execute after at the same time.
   template<typename TLS>
-  void parfor (size_t beg, size_t end, size_t increment,
-	       std::function<void(TLS&)> before,
-	       std::function<void(int, TLS&)> f,
-	       std::function<void(TLS&)> after
-	       ) {
+  void parfor(size_t beg, size_t end, size_t increment, size_t gran,
+    std::function<void(TLS&)> before,
+    std::function<void(int, TLS&, int)> f,
+    std::function<void(int, TLS&)> after
+  ) {
     TLS tls;
-    before(tls);    
-    for (size_t i=beg; i<end; i+= increment) {
-      f(i, tls);
+    for (int i = 0;i < numThreads;i++) {
+      before(tls);
     }
-    after(tls);
+    std::vector<std::thread> threads;
+    int lastProcessed = beg;
+    std::mutex findStart;
+    for (int i = 0;i < numThreads;i++) {
+      std::thread thrd([&](TLS& tls, int k, std::function<void(int, TLS&, int)> fu)->void {
+        findStart.lock();
+        while(lastProcessed < end){
+          int s = lastProcessed;
+          lastProcessed = s + gran;
+          findStart.unlock();
+          int e = s + gran;
+          for (int j = s;j < e;j++) {
+            fu(j, tls, k);
+          }
+          findStart.lock();
+        }
+        findStart.unlock();
+      }, std::ref(tls), i, f);
+      threads.push_back(std::move(thrd));
+    }
+    for (auto& thrd : threads) {
+      if (thrd.joinable()) {
+        thrd.join();
+      }
+    }
+    for (int i = 0;i < numThreads;i++) {
+      after(i, tls);
+    }
   }
-  
+
 };
 
 #endif

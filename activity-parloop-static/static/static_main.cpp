@@ -45,28 +45,28 @@ int main(int argc, char* argv[]) {
     sl.setThreads(numThreads);
     double lead = (b - a) / n;
     double sum = 0;
-      sl.parfor<std::vector<double>>(0,n, 1,
-        [&](std::vector<double>& tls) -> void {
-	  tls.push_back(0);
-        },
-        [&](int j, std::vector<double>& tls, int k) -> void {
-	  double num = (a + j + .5) * (lead);
-          if (funcID == 1) {
-            tls.at(k) += f1(num, intensity);
-          }
-          else if (funcID == 2) {
-            tls.at(k) += f2(num, intensity);
-          }
-          else if (funcID == 3) {
-            tls.at(k) += f3(num, intensity);
-          }
-          else {
-            tls.at(k) += f4(num, intensity);
-          }
-        },
-          [&](int k, std::vector<double> tls) -> void {
-          sum += tls.at(k);
+    sl.parfor<std::vector<double>>(0, n, 1,
+      [&](std::vector<double>& tls) -> void {
+        tls.push_back(0);
+      },
+      [&](int j, std::vector<double>& tls, int k) -> void {
+        double num = (a + j + .5) * (lead);
+        if (funcID == 1) {
+          tls.at(k) += f1(num, intensity);
         }
+        else if (funcID == 2) {
+          tls.at(k) += f2(num, intensity);
+        }
+        else if (funcID == 3) {
+          tls.at(k) += f3(num, intensity);
+        }
+        else {
+          tls.at(k) += f4(num, intensity);
+        }
+      },
+        [&](int k, std::vector<double> tls) -> void {
+        sum += tls.at(k);
+      }
       );
     auto eTime = std::chrono::system_clock::now();
     std::chrono::duration<double> tTime = eTime - sTime;
