@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <thread>
+#include <mutex>
 
 class StaticLoop {
 private:

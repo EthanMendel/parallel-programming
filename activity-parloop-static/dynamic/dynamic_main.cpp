@@ -4,7 +4,7 @@
 #include <string.h>
 #include <chrono>
 #include <cmath>
-#include "static_loop.cpp"
+#include "dynamic_loop.cpp"
 #include <mutex>
 
 
@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
   int64_t n = atoll(argv[4]);
   int intensity = atoi(argv[5]);
   int numThreads = atoi(argv[6]);
-  int gran = atoi(arg[7]);
+  int gran = atoi(argv[7]);
 
   if (funcID < 1 || funcID > 4) {
     std::cerr << "<functionid> must be 1, 2, 3, or 4" << std::endl;
