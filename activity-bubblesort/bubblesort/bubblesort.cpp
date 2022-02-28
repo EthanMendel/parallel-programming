@@ -38,42 +38,27 @@ int main (int argc, char* argv[]) {
 
   //insert sorting code here.
   std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
-  OmpLoop omp;
-  omp.setNbThread(numThreads);
-  omp.setGranularity(2);
+  // OmpLoop omp;
+  // omp.setNbThread(numThreads);
+  // omp.setGranularity(2);
 
   int swapped = 1;
   std::mutex swappedMutex;
   while (swapped) {
     swapped = 0;
-    omp.parfor<int>(0, n, 2,
-      [&](int tls) -> void {
-        tls = 0;
-      },
-      [&](int i, int tls) -> void {
-        if(arr[i] > arr[i+1]){
-          swap(arr,i,i+1);
-          tls = 1;
-        }
-      },
-      [&](int tls) -> void {
-        swapped = swapped || tls;
+    for(int i=0;i<n;i+=2){
+      if (arr[i-1] > arr[i]) {
+        swap(arr, i-1, i);
+        swapped = 1;
       }
-    );
-    omp.parfor<int>(1,n-3,2,
-      [&](int tls) -> void {
-        tls = 0;
-      },
-      [&](int i, int tls) -> void {
-        if(arr[i] > arr[i+1]){
-          swap(arr,i,i+1);
-          tls = 1;
-        }
-      },
-      [&](int tls) -> void {
-        swapped = swapped || tls;
+    }
+    for(int i=1;i<n-2;i+=1){
+      if (arr[i-1] > arr[i]) {
+        swap(arr, i-1, i);
+        swapped = 1;
       }
-    );
+    }
+    n--;
   }
 
   std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
