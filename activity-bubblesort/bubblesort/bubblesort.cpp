@@ -38,29 +38,58 @@ int main (int argc, char* argv[]) {
 
   //insert sorting code here.
   std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
-  // OmpLoop omp;
-  // omp.setNbThread(numThreads);
-  // omp.setGranularity(2);
+  OmpLoop omp;
+  omp.setNbThread(numThreads);
+  //omp.setGranularity(2);
 
-  int swapped = 1;
+  bool swapped = true;
   std::mutex swappedMutex;
   while (swapped) {
-    //for(int i=0;i<n;i++){
-    //  std::cout<<arr[i]<<",";
-    //}
-    //std::cout<<std::endl;  
-    swapped = 0;
-    for(int i=0;i<n;i+=2){
-      if (arr[i-1] > arr[i]) {
-        swap(arr, i-1, i);
-        swapped = 1;
-      }
+    for(int i=0;i<n;i++){
+      std::cout<<arr[i]<<",";
     }
-    for(int i=1;i<n;i+=2){
-      if (arr[i-1] > arr[i]) {
-        swap(arr, i-1, i);
-        swapped = 1;
+    std::cout<<std::endl;  
+    swapped = false;
+    omp.parfor<bool>(0,n,2,
+      [&](bool tls) -> void{
+	tls = false;
+      },
+      [&](int i, bool tls) -> void{
+        if(arr[i-1] > arr[i]){
+          swap(arr,i-1,i);
+	  tls = true;
+	  std::cout<<"swapping even"<<std::endl;
+          std::cout<<"tls"<<tls<<std::endl;
+	}
+      },
+      [&](bool tls) -> void{
+        std::cout<<"tls"<<tls<<std::endl;
+	std::lock_guard<std::mutex> lg(swappedMutex);
+        swapped = swapped || tls;
       }
+    );
+    omp.parfor<bool>(1,n,2,
+      [&](bool tls) -> void{
+        tls = false;
+      },
+      [&](int i, bool tls) -> void{
+        if(arr[i-1] > arr[i]){
+	  swap(arr,i-1,i);
+	  tls = true;
+	  std::cout<<"swapping odd"<<std::endl;
+	  std::cout<<"tls"<<tls<<std::endl;
+        }
+      },
+      [&](bool tls) -> void{
+        std::cout<<"tls"<<tls<<std::endl; 
+        std::lock_guard<std::mutex> lg(swappedMutex);
+	swapped = swapped || tls;
+      }
+    );
+    if(swapped){
+      std::cout<<"swapped true"<<std::endl;
+    }else{
+      std::cout<<"swapped false"<<std::endl;
     }
   }
 
