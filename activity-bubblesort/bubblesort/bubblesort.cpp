@@ -45,6 +45,10 @@ int main (int argc, char* argv[]) {
   int swapped = 1;
   std::mutex swappedMutex;
   while (swapped) {
+    //for(int i=0;i<n;i++){
+    //  std::cout<<arr[i]<<",";
+    //}
+    //std::cout<<std::endl;  
     swapped = 0;
     for(int i=0;i<n;i+=2){
       if (arr[i-1] > arr[i]) {
@@ -52,13 +56,12 @@ int main (int argc, char* argv[]) {
         swapped = 1;
       }
     }
-    for(int i=1;i<n-2;i+=1){
+    for(int i=1;i<n;i+=2){
       if (arr[i-1] > arr[i]) {
         swap(arr, i-1, i);
         swapped = 1;
       }
     }
-    n--;
   }
 
   std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
