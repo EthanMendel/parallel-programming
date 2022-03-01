@@ -63,14 +63,13 @@ int main (int argc, char* argv[]) {
   omp.setGranularity(n/numThreads);//is this right?
 
   for(int d=1;d<(m+n);d++){//diagnal number
-    //std::cout<<"diag #"<<d-1;
+    
     omp.parfor<int>(1,d+1,1,
-      [&](int tls) -> void{
-        tls = d;
-      },
+      [&](int tls) -> void{},
       [&](int d2,int tls) -> void{
-        int useI = d2;
-        int useJ = tls - d2 + 1;
+        //std::cout<<"diag #"<<d-1;
+	int useI = d2;
+        int useJ = d - d2 + 1;
         if(useI > m){
           useI = m;
         }else if(useI < 1){
@@ -80,7 +79,7 @@ int main (int argc, char* argv[]) {
           useJ = n;
         }
         if(useI + useJ- 2 != d - 1){
-          continue;
+          return;
         }
         //std::cout<<"("<<useI-1<<","<<useJ-1<<") ";
         if(X[useI-1] == Y[useJ-1]){
@@ -88,11 +87,10 @@ int main (int argc, char* argv[]) {
         }else{
           C.at(useI).at(useJ) = std::max(C.at(useI-1).at(useJ),C.at(useI).at(useJ-1));
         }
-
+        //std::cout<<std::endl;
       },
       [&](int tls) -> void{}
     );
-    //std::cout<<std::endl;
   }
   //print2Dvec(C);
   int result = C.at(m).at(n); // length of common subsequence
