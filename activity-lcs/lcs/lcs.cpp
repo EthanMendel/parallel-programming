@@ -17,7 +17,15 @@ extern "C" {
 }
 #endif
 
-
+void print2Dvec(std::vector<std::vector<int>> v){
+  for(int i=0;i<v.size();i++){
+    for(int j=0;v.at(i).size();j++){
+      std::cout<<v.at(i).at(j)<<"\t";
+    }
+    std::cout<<std::endl;
+  }
+  std::cout<<std::endl;
+}
 
 int main (int argc, char* argv[]) {
 
@@ -35,7 +43,33 @@ int main (int argc, char* argv[]) {
 
   
   //insert LCS code here.
-  int result = -1; // length of common subsequence
+
+  std::vector<std::vector<int>> C;
+  for(int i=0;i<m;i++){
+    std::vector<int> c;
+    for(int j=0;j<n;j++){
+      c.push_back(0);
+    }
+    C.push_back(c);
+  }
+
+  for(int d=0;d<(m+n-1);d++){//diagnal number
+    for(int i=d,j=0;i>=0||j<n;i--,j++){
+      if(i >= m){
+        i = m-1;
+      }
+      if(j >= n){
+        j = n-1;
+      }
+      if(X[i] == Y[j]){
+        C.at(i).at(j) = C.at(i-1).at(j-1) + 1;
+      }else{
+        C.at(i).at(j) = max(C.at(i-1).at(j),C.at(i).at(j-1));
+      }
+    }
+  }
+  print2Dvec(C);
+  int result = C.at(m-1).at(n-1); // length of common subsequence
 
 
   checkLCS(X, m, Y, n, result);
