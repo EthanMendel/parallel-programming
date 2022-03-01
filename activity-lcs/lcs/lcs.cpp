@@ -59,19 +59,18 @@ int main (int argc, char* argv[]) {
 
   for(int d=1;d<(m+n);d++){//diagnal number
     //std::cout<<"diag #"<<d-1;
-    // for(int i=d,j=1;i>0||j<=n;i--,j++){
-    for(int d2=1;d2<(m+n);d2++){
-      int useI = d-d2;
-      int useJ = d;
+    for(int d2=1;d2<=d;d2++){
+      int useI = d2;
+      int useJ = d - d2 + 1;
       if(useI > m){
         useI = m;
       }else if(useI < 1){
-        useI = 1;
+	useI = 1;
       }
       if(useJ > n){
-        useJ = n;
+	useJ = n;
       }
-      if(useI + useJ - 2 != d - 1){
+      if(useI + useJ- 2 != d - 1){
         continue;
       }
       //std::cout<<"("<<useI-1<<","<<useJ-1<<") ";
