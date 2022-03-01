@@ -38,6 +38,7 @@ int main (int argc, char* argv[]) {
 
   int m = atoi(argv[1]);
   int n = atoi(argv[2]);
+  int numThreads = atoi(argv[3]);
 
   // get string data 
   char *X = new char[m];
@@ -57,29 +58,40 @@ int main (int argc, char* argv[]) {
     C.push_back(c);
   }
 
+  OmpLoop omp;
+  omp.setNbThread(numThreads);
+  omp.setGranularity(n/numThreads);//is this right?
+
   for(int d=1;d<(m+n);d++){//diagnal number
     //std::cout<<"diag #"<<d-1;
-    for(int d2=1;d2<=d;d2++){
-      int useI = d2;
-      int useJ = d - d2 + 1;
-      if(useI > m){
-        useI = m;
-      }else if(useI < 1){
-	useI = 1;
-      }
-      if(useJ > n){
-	useJ = n;
-      }
-      if(useI + useJ- 2 != d - 1){
-        continue;
-      }
-      //std::cout<<"("<<useI-1<<","<<useJ-1<<") ";
-      if(X[useI-1] == Y[useJ-1]){
-        C.at(useI).at(useJ) = C.at(useI-1).at(useJ-1) + 1;
-      }else{
-        C.at(useI).at(useJ) = std::max(C.at(useI-1).at(useJ),C.at(useI).at(useJ-1));
-      }
-    }
+    omp.parfor<int>(1,d+1,1,
+      [&](int tls) -> void{
+        tls = d;
+      },
+      [&](int d2,int tls) -> void{
+        int useI = d2;
+        int useJ = tls - d2 + 1;
+        if(useI > m){
+          useI = m;
+        }else if(useI < 1){
+          useI = 1;
+        }
+        if(useJ > n){
+          useJ = n;
+        }
+        if(useI + useJ- 2 != d - 1){
+          continue;
+        }
+        //std::cout<<"("<<useI-1<<","<<useJ-1<<") ";
+        if(X[useI-1] == Y[useJ-1]){
+          C.at(useI).at(useJ) = C.at(useI-1).at(useJ-1) + 1;
+        }else{
+          C.at(useI).at(useJ) = std::max(C.at(useI-1).at(useJ),C.at(useI).at(useJ-1));
+        }
+
+      },
+      [&](int tls) -> void{}
+    );
     //std::cout<<std::endl;
   }
   //print2Dvec(C);
