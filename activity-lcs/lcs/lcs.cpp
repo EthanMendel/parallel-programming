@@ -49,10 +49,6 @@ int main (int argc, char* argv[]) {
   //insert LCS code here.
   std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
 
-  OmpLoop omp;
-  omp.setNbThread(numThreads);
-  omp.setGranularity(1);
-
   std::vector<std::vector<int>> C;
   for(int i=0;i<=m;i++){
     std::vector<int> c;
@@ -62,13 +58,19 @@ int main (int argc, char* argv[]) {
     C.push_back(c);
   }
 
+  OmpLoop omp;
+  omp.setNbThread(numThreads);
+  omp.setGranularity(n/numThreads);//is this right?
+
   for(int d=1;d<(m+n);d++){//diagnal number
     //std::cout<<"diag #"<<d-1;
-    omp.parfor<std::vector<int>>(d,0,-1,1,n,1,
-      [&](std::vector<int> tls) -> void{},
-      [&](int i, int j, std::vector<int> tls) -> void{
-        int useI = i;
-        int useJ = j;
+    omp.parfor<int>(1,d+1,1,
+      [&](int tls) -> void{
+        tls = d;
+      },
+      [&](int d2,int tls) -> void{
+        int useI = d2;
+        int useJ = tls - d2 + 1;
         if(useI > m){
           useI = m;
         }else if(useI < 1){
@@ -77,7 +79,7 @@ int main (int argc, char* argv[]) {
         if(useJ > n){
           useJ = n;
         }
-        if(useI + useJ - 2 != d - 1){
+        if(useI + useJ- 2 != d - 1){
           continue;
         }
         //std::cout<<"("<<useI-1<<","<<useJ-1<<") ";
@@ -86,8 +88,9 @@ int main (int argc, char* argv[]) {
         }else{
           C.at(useI).at(useJ) = std::max(C.at(useI-1).at(useJ),C.at(useI).at(useJ-1));
         }
+
       },
-      [&](std::vector<int> tls){}
+      [&](int tls) -> void{}
     );
     //std::cout<<std::endl;
   }
