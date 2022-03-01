@@ -40,10 +40,9 @@ int main (int argc, char* argv[]) {
   std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
   OmpLoop omp;
   omp.setNbThread(numThreads);
-  //omp.setGranularity(2);
+  omp.setGranularity(n/numThreads);
 
   bool swapped = true;
-  std::mutex swappedMutex;
   while (swapped) {
     //for(int i=0;i<n;i++){
     //  std::cout<<arr[i]<<",";
@@ -55,28 +54,20 @@ int main (int argc, char* argv[]) {
       [&](int i, bool tls) -> void{
         if(arr[i-1] > arr[i]){
          swap(arr,i-1,i);
-	 if(!swapped){
-	   std::lock_guard<std::mutex> lg(swappedMutex);
-	   swapped = true;
-	 }
-	}
+	 swapped = true;
+        }
       },
       [&](bool tls) -> void{}
     );
     omp.parfor<bool>(1,n,2,
-      [&](bool tls) -> void{
-      },
+      [&](bool tls) -> void{},
       [&](int i, bool tls) -> void{
         if(arr[i-1] > arr[i]){
 	  swap(arr,i-1,i);
-	  if(!swapped){
-	    std::lock_guard<std::mutex> lg(swappedMutex); 
-	    swapped = true;
-	  }
+	  swapped = true;
         }
       },
-      [&](bool tls) -> void{
-      }
+      [&](bool tls) -> void{}
     );
     //if(swapped){
     //  std::cout<<"swapped true"<<std::endl;
