@@ -5,6 +5,7 @@
 #include <iostream>
 #include <unistd.h>
 #include "omploop.hpp"
+#include <chrono>
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,13 +19,15 @@ extern "C" {
 #endif
 
 void print2Dvec(std::vector<std::vector<int>> v){
+  std::cout<<"in print2Dvec"<<std::endl;
   for(int i=0;i<v.size();i++){
-    for(int j=0;v.at(i).size();j++){
-      std::cout<<v.at(i).at(j)<<"\t";
+    for(int j=0;j<v.at(i).size();j++){
+      std::cout<<v.at(i).at(j)<<" ";
     }
     std::cout<<std::endl;
   }
   std::cout<<std::endl;
+  std::cout<<"ending print2Dvec"<<std::endl;
 }
 
 int main (int argc, char* argv[]) {
@@ -43,36 +46,50 @@ int main (int argc, char* argv[]) {
 
   
   //insert LCS code here.
+  std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
 
   std::vector<std::vector<int>> C;
-  for(int i=0;i<m;i++){
+  for(int i=0;i<=m;i++){
     std::vector<int> c;
-    for(int j=0;j<n;j++){
+    for(int j=0;j<=n;j++){
       c.push_back(0);
     }
     C.push_back(c);
   }
 
-  for(int d=0;d<(m+n-1);d++){//diagnal number
-    for(int i=d,j=0;i>=0||j<n;i--,j++){
-      if(i >= m){
-        i = m-1;
+  for(int d=1;d<(m+n);d++){//diagnal number
+    //std::cout<<"diag #"<<d-1;
+    for(int i=d,j=1;i>0||j<=n;i--,j++){
+      int useI = i;
+      int useJ = j;
+      if(useI > m){
+        useI = m;
+      }else if(useI < 1){
+        useI = 1;
       }
-      if(j >= n){
-        j = n-1;
+      if(useJ > n){
+        useJ = n;
       }
-      if(X[i] == Y[j]){
-        C.at(i).at(j) = C.at(i-1).at(j-1) + 1;
+      if(useI + useJ - 2 != d - 1){
+        continue;
+      }
+      //std::cout<<"("<<useI-1<<","<<useJ-1<<") ";
+      if(X[useI-1] == Y[useJ-1]){
+        C.at(useI).at(useJ) = C.at(useI-1).at(useJ-1) + 1;
       }else{
-        C.at(i).at(j) = max(C.at(i-1).at(j),C.at(i).at(j-1));
+        C.at(useI).at(useJ) = std::max(C.at(useI-1).at(useJ),C.at(useI).at(useJ-1));
       }
     }
+    //std::cout<<std::endl;
   }
-  print2Dvec(C);
-  int result = C.at(m-1).at(n-1); // length of common subsequence
-
+  //print2Dvec(C);
+  int result = C.at(m).at(n); // length of common subsequence
+  
+  std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
+  std::chrono::duration<double> elapsed = end - start;
 
   checkLCS(X, m, Y, n, result);
+  std::cerr<<elapsed.count()<<std::endl;
 
   delete[] X;
   delete[] Y;
