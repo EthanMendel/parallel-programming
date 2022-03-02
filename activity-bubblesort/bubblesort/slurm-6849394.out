@@ -1,0 +1,2 @@
+starting time is Tue Mar 1 17:10:51 EST 2022
+slurmstepd: error: *** JOB 6849394 ON gal-c1 CANCELLED AT 2022-03-01T21:11:18 DUE TO TIME LIMIT ***
