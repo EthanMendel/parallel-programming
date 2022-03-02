@@ -1,4 +1,3 @@
-#include <omp.h>
 #include <stdio.h>
 #include <iostream>
 #include <sys/types.h>
