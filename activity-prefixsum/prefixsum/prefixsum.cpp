@@ -33,30 +33,38 @@ int main (int argc, char* argv[]) {
 
   std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
 
+  OmpLoop omp;
+  omp.setNbThread(numThreads);
+  omp.setGranularity(n/numThreads);
+
   int * pr = new int [n+1];
 
   pr[0] = 0;
   float frac = int(n/numThreads);
   int num_in_each_process = frac;
-  for(int i=0;i<numThreads;i++){
+  omp.parfor<int>(0,numThreads,1,
+    [&](int tls)->void{},
+    [&](int i, int tls)->void{
       int start_index = i * num_in_each_process;
       int end = start_index + num_in_each_process;
       if(i == numThreads - 1){
         end += n%numThreads + 1;
-	//std::cout<<"adding leftover, end now "<<end<<std::endl;
+	      //std::cout<<"adding leftover, end now "<<end<<std::endl;
       }
       int hold = pr[start_index];
       pr[start_index] = 0;
       for(int j=0;j<end;j++){
           if(start_index + j + 1 <= n + 1){
-	      //std::cout<<"adding "<<start_index + j<<std::endl;
-	      //std::cout<<"\tprev "<<pr[start_index+j]<<"\tval "<<arr[start_index+j]<<std::endl;
-              pr[start_index + j + 1] = pr[start_index + j] + arr[start_index + j];
+            //std::cout<<"adding "<<start_index + j<<std::endl;
+            //std::cout<<"\tprev "<<pr[start_index+j]<<"\tval "<<arr[start_index+j]<<std::endl;
+            pr[start_index + j + 1] = pr[start_index + j] + arr[start_index + j];
           }
       }
       pr[start_index] = hold;
       //std::cout<<"\tend "<<pr[end]<<" at "<<end<<std::endl;
-  }
+    },
+    [&](int tls)->void{}
+  );
   for(int i=1;i<numThreads;i++){
       int start_index = i * num_in_each_process + 1;
       int end = start_index + num_in_each_process;
@@ -64,12 +72,16 @@ int main (int argc, char* argv[]) {
         end += n%numThreads + 1;
       }
       int diff = pr[start_index - 1];
-      for(int j=start_index;j<end;j++){
+      omp.parfor<int>(start_index,end,1,
+        [&](int tls)->void{},
+        [&](int j,int tls)->void{
           if(j + 1 <= n + 1){
-              //std::cout<<"adding "<<diff<<" from "<<start_index - 1<<" to index "<<j<<std::endl;
-              pr[j] += int(diff);
+            //std::cout<<"adding "<<diff<<" from "<<start_index - 1<<" to index "<<j<<std::endl;
+            pr[j] += int(diff);
           }
-      }
+        },
+        [&](int tls)->void{}
+      );
   }
 
   //for(int i=0;i<n;i++){
