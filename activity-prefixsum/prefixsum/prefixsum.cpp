@@ -36,13 +36,18 @@ int main (int argc, char* argv[]) {
   int * pr = new int [n+1];
 
   pr[0] = 0;
-  float frac = n/numThreads;
-  int num_in_each_process = ceil(frac);
+  float frac = int(n/numThreads);
+  int num_in_each_process = frac;
   for(int i=0;i<numThreads;i++){
       int start_index = i * num_in_each_process;
+      int end = start_index + num_in_each_process;
+      if(i == numThreads - 1){
+        end += n%numThreads + 1;
+	//std::cout<<"adding leftover, end now "<<end<<std::endl;
+      }
       int hold = pr[start_index];
       pr[start_index] = 0;
-      for(int j=0;j<num_in_each_process;j++){
+      for(int j=0;j<end;j++){
           if(start_index + j + 1 <= n + 1){
 	      //std::cout<<"adding "<<start_index + j<<std::endl;
 	      //std::cout<<"\tprev "<<pr[start_index+j]<<"\tval "<<arr[start_index+j]<<std::endl;
@@ -50,15 +55,19 @@ int main (int argc, char* argv[]) {
           }
       }
       pr[start_index] = hold;
-      //std::cout<<"\tend "<<pr[start_index + num_in_each_process]<<" at "<<start_index + num_in_each_process<<std::endl;
+      //std::cout<<"\tend "<<pr[end]<<" at "<<end<<std::endl;
   }
   for(int i=1;i<numThreads;i++){
       int start_index = i * num_in_each_process + 1;
+      int end = start_index + num_in_each_process;
+      if(i == numThreads -1){
+        end += n%numThreads + 1;
+      }
       int diff = pr[start_index - 1];
-      for(int j=0;j<num_in_each_process;j++){
-          if(start_index + j + 1 <= n + 1){
-              //std::cout<<"adding "<<diff<<" from "<<start_index - 1<<" to index "<<start_index + j<<std::endl;
-              pr[start_index + j] += int(diff);
+      for(int j=start_index;j<end;j++){
+          if(j + 1 <= n + 1){
+              //std::cout<<"adding "<<diff<<" from "<<start_index - 1<<" to index "<<j<<std::endl;
+              pr[j] += int(diff);
           }
       }
   }
@@ -67,7 +76,7 @@ int main (int argc, char* argv[]) {
   //  std::cout<<" "<<arr[i];
   //}
   //std::cout<<std::endl;
-  //for(int i=0;i<n;i++){
+  //for(int i=0;i<=n;i++){
   //  std::cout<<" "<<pr[i];
   //}
   //std::cout<<std::endl;
