@@ -90,15 +90,18 @@ int main (int argc, char* argv[]) {
 
   //insert sorting code here.
   int numIter = ceil(log2(n));
-  for(int i=numIter;i<=0;i--){
-    int perThrd = pow(2,numIter);
-    for(int j=0;j<n;j+=perThrd){
+  std::cout<<"running for "<<numIter<<std::endl;
+  for(int i=0;i<=numIter;i++){
+    int perThrd = pow(2,i);
+    std::cout<<"iteration "<<i<<" has "<<perThrd<<" per thread"<<std::endl;
+    for(int j=0;j<n+1;j++){
       int start = j*perThrd;
       int end = start + perThrd;
-      if(start < 0 || end > n){
+      if(start < 0 || end > n+1){
         continue;
       }
       int mid = (start + end)/2;
+      std::cout<<"\tmerge starting at "<<start<<" ending at "<<end<<" with a mid at "<<mid<<std::endl;
       merge(arr,start,mid,end);
     }
   }
