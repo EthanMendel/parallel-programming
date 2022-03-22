@@ -90,22 +90,36 @@ int main (int argc, char* argv[]) {
 
   //insert sorting code here.
   int numIter = ceil(log2(n));
-  std::cout<<"running for "<<numIter<<std::endl;
-  for(int i=0;i<=numIter;i++){
+  //std::cout<<"running for "<<numIter<<std::endl;
+  for(int i=1;i<=numIter;i++){
     int perThrd = pow(2,i);
-    std::cout<<"iteration "<<i<<" has "<<perThrd<<" per thread"<<std::endl;
-    for(int j=0;j<n+1;j++){
+    //std::cout<<"iteration "<<i<<" has "<<perThrd<<" per thread"<<std::endl;
+    for(int j=0;j<=pow(2,numIter)+1;j++){
       int start = j*perThrd;
       int end = start + perThrd;
-      if(start < 0 || end > n+1){
-        continue;
+      if(end > pow(2,numIter) || start > n){
+	continue;
       }
-      int mid = (start + end)/2;
-      std::cout<<"\tmerge starting at "<<start<<" ending at "<<end<<" with a mid at "<<mid<<std::endl;
+      //int mid = (start + end)/2;
+      bool edited = false;
+      if(end > n){
+	//std::cout<<"\t\tchanging end from "<<end<<" to "<<n<<std::endl;
+	end = n-1;	  
+        edited = true;	
+      }
+      int mid = ceil(double(start + end)/2.0);
+      if(edited){
+        mid+=1;
+      }
+      //std::cout<<"\tmerge starting at "<<start<<" ending at "<<end<<" with a mid at "<<mid<<std::endl;
       merge(arr,start,mid,end);
     }
+    //for(int j=0;j<n;j++){
+    //  std::cout<<arr[j]<<" , ";
+    //}
+    //std::cout<<std::endl;
   }
-
+  std::cerr<<10.0;
 
   
   checkMergeSortResult (arr, n);
