@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <chrono>
 #include <mpi.h>
+#include <vector>
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,7 +47,7 @@ int main(int argc, char* argv[]) {
   double sum = 0;
   int amt = int(n/P);
   int s = i*amt;
-  int e = s+e;
+  int e = s+amt;
   if(i+1 == P){
     e=n;
   }
@@ -68,13 +69,14 @@ int main(int argc, char* argv[]) {
   std::vector<double> locOutput;
   locOutput.push_back(lead * sum);
   std::vector<double> output;
-  if(i==0){
-    MPI_Reduce(&(locOutput[0]),&(output[0]), 1,MPI_DOUBLE,MPI_SUM, 0, MPI_CCOMM_WORLD);
-  }
+  output.push_back(0);
+  MPI_Reduce(&(locOutput[0]),&(output[0]), 1,MPI_DOUBLE,MPI_SUM, 0, MPI_COMM_WORLD);
   auto eTime = std::chrono::system_clock::now();
   std::chrono::duration<double> tTime = eTime - sTime;
-  std::cerr << tTime.count();
-  std::cout << output.at(0);
+  if(i==0){
+    std::cerr << tTime.count();
+    std::cout << output.at(0);
+  }
   MPI_Finalize();
   return 0;
 }
