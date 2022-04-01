@@ -2,6 +2,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <chrono>
+#include <mpi.h>
 
 float genA (int row, int col) {
   if (row > col)
@@ -44,6 +45,7 @@ void matmul(float*A, float*x, float*y, long n) {
 }
 
 int main (int argc, char*argv[]) {
+    MPI_Init(&argc, &argv);
 
   if (argc < 3) {
     std::cout<<"usage: "<<argv[0]<<" <n> <iteration>"<<std::endl;
@@ -52,15 +54,29 @@ int main (int argc, char*argv[]) {
   bool check = true;
   
   long n = atol(argv[1]);
-
   long iter = atol(argv[2]);
+
+  int P,i;
+  MPI_Comm_size(MPI_COMM_WORLD, &P);
+  MPI_Comm_rank(MPI_COMM_WORLD, &i);
   
+  int sqrtP = sqrt(P);
+  int pRow = floor(double(i) / double(sqrtP));
+  int pCol = i % sqrtP;
+
+  std::cout<<"process number "<<i<<" is block at\trow "<<row<<"\tcol "<<col<<std::endl;
+  NsqrtP = n/sqrtP;
+  int sRow = NsqrtP * pRow;
+  int sCol = NsqrtP * pCol;
+  int eRow = sRow + NsqrtP;
+  int eCol = sCol + NsqrtP;
+  std::cout<<"\tresponsible for row\tcol\n\t\t"<<sRow<<" to "<<eRow<<"\t"<<sCol<<" to "<<eCol<<std::endl;
 
   //initialize data
-  float* A = new float[n*n];
+  float* A = new float[NsqrtP*NsqrtP];
 
-  for (long row = 0; row<n; row++) {
-    for (long col=0; col<n; col++) {
+  for (long row = sRow; row<eRow; row++) {
+    for (long col=sCol; col<eCol; col++) {
       A[row*n+col] = genA(row, col);
     }
   }
@@ -72,22 +88,22 @@ int main (int argc, char*argv[]) {
   //   std::cout<<std::endl;
   // }
 
-  float* x = new float[n];
+  float* x = new float[NsqrtP];
 
-  for (long i=0; i<n; ++i)
+  for (long i=sCol; i<eCol; ++i)
     x[i] = genx0(i);
 
   // for (long i=0; i<n; ++i)
   //   std::cout<<x[i]<<" ";
   // std::cout<<std::endl;
   
-  float* y = new float[n];
+  float* y = new float[NsqrtP];
 
   std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
   
   for (int it = 0; it<iter; ++it) {
   
-    matmul(A, x, y, n);
+    matmul(A, x, y, NsqrtP);
 
     {
       float*t = x;
@@ -95,10 +111,10 @@ int main (int argc, char*argv[]) {
       y=t;
     }
 
-    // std::cout<<"x["<<it+1<<"]: ";
-    // for (long i=0; i<n; ++i)
-    //   std::cout<<x[i]<<" ";
-    // std::cout<<std::endl;
+    std::cout<<"x["<<it+1<<"]: ";
+    for (long i=0; i<n; ++i)
+      std::cout<<x[i]<<" ";
+    std::cout<<std::endl;
 
     if (check)
       for (long i = 0; i<n; ++i)
@@ -117,5 +133,6 @@ int main (int argc, char*argv[]) {
   delete[] x;
   delete[] y;
   
+  MPI_Finalize();
   return 0;
 }
