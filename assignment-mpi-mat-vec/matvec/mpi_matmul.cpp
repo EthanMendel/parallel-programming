@@ -63,7 +63,6 @@ int main (int argc, char*argv[]) {
   int sqrtP = sqrt(P);
   int pRow = floor(double(i) / double(sqrtP));
   int pCol = i % sqrtP;
-
   //std::cout<<"process "<<i<<" of "<<P<<" is block at\trow "<<pRow<<"\t\tcol "<<pCol<<std::endl;
   int NsqrtP = n/sqrtP;
   int sRow = NsqrtP * pRow;
@@ -71,6 +70,21 @@ int main (int argc, char*argv[]) {
   int eRow = sRow + NsqrtP;
   int eCol = sCol + NsqrtP;
   //std::cout<<"\tresponsible for\t\trows\t\tcols\n\t\t\t\t"<<sRow<<" to "<<eRow<<"\t"<<sCol<<" to "<<eCol<<std::endl;
+  MPI_Comm rowcomm;
+  MPI_Comm_split (MPI_COMM_WORLD, pRow, i, &splitcomm);
+  MPI_Comm colcomm;
+  MPI_Comm_split (MPI_COMM_WORLD, pCol, i, &splitcomm);
+  int rrank;
+  int rsize;
+  MPI_Comm_rank(rowcomm, &rrank);
+  MPI_Comm_size(rowcomm, &rsize);
+  int crank;
+  int csize;
+  MPI_Comm_rank(colcomm, &crank);
+  MPI_Comm_size(colcomm, &csize);
+
+  std::cout<<"\tcommunicator\t\t\t\t"<<rrank<<" of "<<rsize<<"\t"<<crank<<" of "<<csize<<std::endl;
+
 
   //initialize data
   float* A = new float[NsqrtP*NsqrtP];
