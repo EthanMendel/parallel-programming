@@ -69,11 +69,11 @@ int main (int argc, char*argv[]) {
   int sCol = NsqrtP * pCol;
   int eRow = sRow + NsqrtP;
   int eCol = sCol + NsqrtP;
-  //std::cout<<"\tresponsible for\t\trows\t\tcols\n\t\t\t\t"<<sRow<<" to "<<eRow<<"\t"<<sCol<<" to "<<eCol<<std::endl;
+  //std::cout<<"\tresponsible for\t\trows\t\tcols\n\t\t\t\t"<<sRow<<" to "<<eRow<<"\t\t"<<sCol<<" to "<<eCol<<std::endl;
   MPI_Comm rowcomm;
-  MPI_Comm_split (MPI_COMM_WORLD, pRow, i, &splitcomm);
+  MPI_Comm_split (MPI_COMM_WORLD, pRow, i, &rowcomm);
   MPI_Comm colcomm;
-  MPI_Comm_split (MPI_COMM_WORLD, pCol, i, &splitcomm);
+  MPI_Comm_split (MPI_COMM_WORLD, pCol, i, &colcomm);
   int rrank;
   int rsize;
   MPI_Comm_rank(rowcomm, &rrank);
@@ -83,7 +83,7 @@ int main (int argc, char*argv[]) {
   MPI_Comm_rank(colcomm, &crank);
   MPI_Comm_size(colcomm, &csize);
 
-  std::cout<<"\tcommunicator\t\t\t\t"<<rrank<<" of "<<rsize<<"\t"<<crank<<" of "<<csize<<std::endl;
+  //std::cout<<"\tcommunicator\t\t"<<rrank<<" of "<<rsize<<"\t\t"<<crank<<" of "<<csize<<std::endl;
 
 
   //initialize data
@@ -119,11 +119,19 @@ int main (int argc, char*argv[]) {
   
     matmul(A, x, y, NsqrtP);
 
-    {
-      float*t = x;
-      x=y;
-      y=t;
+   // {
+   //   float*t = x;
+   //   x=y;
+   //   y=t;
+   // }
+    int diag = -1;
+    if(pCol > pRow){
+      diag = pCol;
+    }else{
+      diag = pRow;
     }
+    MPI_Reduce(y,x, NsqrtP, MPI_INT,MPI_SUM,diag,rowcomm);
+    MPI_Bcast(x,NsqrtP,MPI_INT,diag,colcomm);
 
    // std::cout<<"\nx["<<it+1<<"]: ";
    // for (long i=0; i<n; ++i)
