@@ -64,13 +64,13 @@ int main (int argc, char*argv[]) {
   int pRow = floor(double(i) / double(sqrtP));
   int pCol = i % sqrtP;
 
-  std::cout<<"process number "<<i<<" is block at\trow "<<row<<"\tcol "<<col<<std::endl;
-  NsqrtP = n/sqrtP;
+  std::cout<<"process "<<i<<" of "<<P<<" is block at\trow "<<pRow<<"\t\tcol "<<pCol<<std::endl;
+  int NsqrtP = n/sqrtP;
   int sRow = NsqrtP * pRow;
   int sCol = NsqrtP * pCol;
   int eRow = sRow + NsqrtP;
   int eCol = sCol + NsqrtP;
-  std::cout<<"\tresponsible for row\tcol\n\t\t"<<sRow<<" to "<<eRow<<"\t"<<sCol<<" to "<<eCol<<std::endl;
+  std::cout<<"\tresponsible for\t\trows\t\tcols\n\t\t\t\t"<<sRow<<" to "<<eRow<<"\t"<<sCol<<" to "<<eCol<<std::endl;
 
   //initialize data
   float* A = new float[NsqrtP*NsqrtP];
@@ -81,12 +81,12 @@ int main (int argc, char*argv[]) {
     }
   }
 
-  // for (long row = 0; row<n; row++) {
-  //   for (long col=0; col<n; col++) {
-  //     std::cout<<A[row*n+col]<<" ";
-  //   }
-  //   std::cout<<std::endl;
-  // }
+   for (long row = 0; row<n; row++) {
+     for (long col=0; col<n; col++) {
+       std::cout<<A[row*n+col]<<" ";
+     }
+     std::cout<<std::endl;
+   }
 
   float* x = new float[NsqrtP];
 
@@ -111,7 +111,7 @@ int main (int argc, char*argv[]) {
       y=t;
     }
 
-    std::cout<<"x["<<it+1<<"]: ";
+    std::cout<<"\nx["<<it+1<<"]: ";
     for (long i=0; i<n; ++i)
       std::cout<<x[i]<<" ";
     std::cout<<std::endl;
