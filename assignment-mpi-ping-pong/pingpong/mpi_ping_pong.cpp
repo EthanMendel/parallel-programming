@@ -15,7 +15,7 @@ int main (int argc, char* argv[]) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   float* arr = new float[1];
-  arr[0] = argv[1];
+  arr[0] = atof(argv[1]);
 
   if (rank == 0) {
     MPI_Send(&(arr[0]), 1, MPI_INT, 1, 123, MPI_COMM_WORLD);
@@ -29,6 +29,7 @@ if(rank == 0){
   MPI_Status s;
   MPI_Recv(&(arr[0]), 1, MPI_INT, 1, 321, MPI_COMM_WORLD, &s);
 }else{
+  arr[0] += 2;
   MPI_Send(&(arr[0]), 1, MPI_INT, 0, 321, MPI_COMM_WORLD);
 }
 
