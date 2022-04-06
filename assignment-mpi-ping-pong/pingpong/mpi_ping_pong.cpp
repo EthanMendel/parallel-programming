@@ -25,13 +25,16 @@ int main (int argc, char* argv[]) {
     MPI_Recv(&(arr[0]), 1, MPI_INT, 0, 123, MPI_COMM_WORLD, &s);
   }
 
-if(rank == 0){
-  MPI_Status s;
-  MPI_Recv(&(arr[0]), 1, MPI_INT, 1, 321, MPI_COMM_WORLD, &s);
-}else{
-  arr[0] += 2;
-  MPI_Send(&(arr[0]), 1, MPI_INT, 0, 321, MPI_COMM_WORLD);
-}
+  if(rank == 0){
+    MPI_Status s;
+    MPI_Recv(&(arr[0]), 1, MPI_INT, 1, 321, MPI_COMM_WORLD, &s);
+    std::cout<<arr[0]<<std::endl;
+  }else{
+    arr[0] += 2;
+    MPI_Send(&(arr[0]), 1, MPI_INT, 0, 321, MPI_COMM_WORLD);
+  }
+
+  MPI_Finalize();
 
   return 0;
 }
