@@ -18,9 +18,12 @@ double doIntegration(int funcID, int a, int b, int n, int intensity,int s, int e
   double lead = (b - a) / n;
   double sum = 0;
   for (unsigned int i = s;i < e;i++) {
+    std::cout<<"\tdoing sum "<<i<<"\t currrent sum "<<sum<<std::endl;
     double num = (a + i + .5) * (lead);
     if (funcID == 1) {
-      sum += f1(num, intensity);
+      float a = f1(num, intensity);
+      std::cout<<"\t\tfunc-1 gave "<<a<<std::endl;
+      sum += a;
     } else if (funcID == 2) {
       sum += f2(num, intensity);
     } else if (funcID == 3) {
@@ -78,8 +81,8 @@ int main (int argc, char* argv[]) {
     }
     while(numRecv < numSent){
       double* recArr = new double[1];
-      MPI_Status s;
-      MPI_Recv(&(recArr[0]), 1, MPI_DOUBLE, MPI_ANY_SOURCE, 111, MPI_COMM_WORLD, &s);
+      MPI_Status status;
+      MPI_Recv(&(recArr[0]), 1, MPI_DOUBLE, MPI_ANY_SOURCE, 111, MPI_COMM_WORLD, &status);
       numRecv++;
       sum += recArr[0];
       if(lastProcessed < n){
@@ -96,23 +99,28 @@ int main (int argc, char* argv[]) {
         params[4] = intensity;
         params[5] = s;
         params[6] = e;
-        MPI_Send(&(params[0]), 7, MPI_DOUBLE, s.MPI_SOURCE, 111, MPI_COMM_WORLD);
+        MPI_Send(&(params[0]), 7, MPI_DOUBLE, status.MPI_SOURCE, 111, MPI_COMM_WORLD);
         numSent++;
       }else{
-        MPI_Send(&(params[0]), 7, MPI_DOUBLE, s.MPI_SOURCE, 222, MPI_COMM_WORLD);
+        MPI_Send(&(params[0]), 7, MPI_DOUBLE, status.MPI_SOURCE, 222, MPI_COMM_WORLD);
       }
     }
+    std::cout<<sum<<std::endl;
   }else{
-    MPI_Status s;
-    MPI_Recv(&(params[0]), 7, MPI_DOUBLE, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &s);
-    while(s.MPI_TAG == 111){
+    MPI_Status status;
+    MPI_Recv(&(params[0]), 7, MPI_DOUBLE, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+    while(status.MPI_TAG == 111){
+      for(int i=0;i<7;i++){
+	std::cout<<params[i]<<",";
+      }
+      std::cout<<std::endl;
       double* res = new double[1];
       res[0] = doIntegration(params[0],params[1],params[2],params[3],params[4],params[5],params[6]);
+      std::cout<<"\n"<<res[0]<<std::endl;
       MPI_Send(&(res[0]), 1, MPI_DOUBLE, 0, 111, MPI_COMM_WORLD);
-      MPI_Recv(&(params[0]), 7, MPI_DOUBLE, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &s);
+      MPI_Recv(&(params[0]), 7, MPI_DOUBLE, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
     }
   }
-
 
   MPI_Finalize();
   return 0;
