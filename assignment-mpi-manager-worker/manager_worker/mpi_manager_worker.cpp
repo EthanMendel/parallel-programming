@@ -1,5 +1,6 @@
 #include <mpi.h>
 #include <iostream>
+#include <chrono>
 
 #ifdef __cplusplus
 extern "C" {
@@ -14,16 +15,15 @@ float f4(float x, int intensity);
 }
 #endif
 
-double doIntegration(int funcID, int a, int b, int n, int intensity,int s, int e){
+double doIntegration(int funcID, double a, double b, double n, int intensity,int s, int e){
   double lead = (b - a) / n;
   double sum = 0;
   for (unsigned int i = s;i < e;i++) {
-    std::cout<<"\tdoing sum "<<i<<"\t currrent sum "<<sum<<std::endl;
+    //std::cout<<"\tdoing sum "<<i<<"\t currrent sum "<<sum<<std::endl;
     double num = (a + i + .5) * (lead);
+    //std::cout<<"\t\ta:"<<a<<" b:"<<b<<"n:"<<n<<" (b-a)/n:"<<num<<std::endl;
     if (funcID == 1) {
-      float a = f1(num, intensity);
-      std::cout<<"\t\tfunc-1 gave "<<a<<std::endl;
-      sum += a;
+      sum += f1(num, intensity);
     } else if (funcID == 2) {
       sum += f2(num, intensity);
     } else if (funcID == 3) {
@@ -52,6 +52,7 @@ int main (int argc, char* argv[]) {
     MPI_Finalize();
     return -1;
   }
+  auto sTime = std::chrono::system_clock::now();
   int P, i;
   MPI_Comm_size(MPI_COMM_WORLD, &P);
   MPI_Comm_rank(MPI_COMM_WORLD, &i);
@@ -65,7 +66,9 @@ int main (int argc, char* argv[]) {
     for(int i=1;i<P;i++){
       int s = lastProcessed;
       int e = s + gran;
-      if(e > n){
+      if(s > n){
+        break;	      
+      }else if(e > n){
         e = n;
       }
       lastProcessed = e;
@@ -105,18 +108,23 @@ int main (int argc, char* argv[]) {
         MPI_Send(&(params[0]), 7, MPI_DOUBLE, status.MPI_SOURCE, 222, MPI_COMM_WORLD);
       }
     }
-    std::cout<<sum<<std::endl;
+    double lead = (b - a) / n;
+    sum = sum * lead;
+    auto eTime = std::chrono::system_clock::now();
+    std::chrono::duration<double> tTime = eTime - sTime;
+    std::cout<<sum;
+    std::cerr<<tTime.count();
   }else{
     MPI_Status status;
     MPI_Recv(&(params[0]), 7, MPI_DOUBLE, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
     while(status.MPI_TAG == 111){
-      for(int i=0;i<7;i++){
-	std::cout<<params[i]<<",";
-      }
-      std::cout<<std::endl;
+      //for(int i=0;i<7;i++){
+	//std::cout<<params[i]<<",";
+      //}
+      //std::cout<<std::endl;
       double* res = new double[1];
       res[0] = doIntegration(params[0],params[1],params[2],params[3],params[4],params[5],params[6]);
-      std::cout<<"\n"<<res[0]<<std::endl;
+      //std::cout<<"\n"<<res[0]<<std::endl;
       MPI_Send(&(res[0]), 1, MPI_DOUBLE, 0, 111, MPI_COMM_WORLD);
       MPI_Recv(&(params[0]), 7, MPI_DOUBLE, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
     }
