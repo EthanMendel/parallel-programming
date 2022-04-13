@@ -56,31 +56,39 @@ int main (int argc, char* argv[]) {
   int P, i;
   MPI_Comm_size(MPI_COMM_WORLD, &P);
   MPI_Comm_rank(MPI_COMM_WORLD, &i);
+  int chunkNum = 3;
   int gran = 10;
   double sum = 0;
-  double* params = new double[7];
+  double* params = new double[chunkNum][7];
+  for(int i=0;i<chunkNum;i++){
+    params[i][0] = 0;
+  }
   int lastProcessed = 0;
   int numSent = 0;
   int numRecv = 0;
   if(i == 0){
-    for(int i=1;i<P;i++){
-      int s = lastProcessed;
-      int e = s + gran;
-      if(s > n){
+    for(int c=0;c<chunkNum;c++){
+      for(int i=1;i<P;i++){
+        int s = lastProcessed;
+        int e = s + gran;
+        if(s > n){
+          break;	      
         break;	      
-      }else if(e > n){
-        e = n;
+          break;	      
+        }else if(e > n){
+          e = n;
+        }
+        lastProcessed = e;
+        params[0] = funcID;
+        params[1] = a;
+        params[2] = b;
+        params[3] = n;
+        params[4] = intensity;
+        params[5] = s;
+        params[6] = e;
+        MPI_Send(&(params[0]), 7, MPI_DOUBLE, i, 111, MPI_COMM_WORLD);
+        numSent++;
       }
-      lastProcessed = e;
-      params[0] = funcID;
-      params[1] = a;
-      params[2] = b;
-      params[3] = n;
-      params[4] = intensity;
-      params[5] = s;
-      params[6] = e;
-      MPI_Send(&(params[0]), 7, MPI_DOUBLE, i, 111, MPI_COMM_WORLD);
-      numSent++;
     }
     while(numRecv < numSent){
       double* recArr = new double[1];
@@ -115,18 +123,25 @@ int main (int argc, char* argv[]) {
     std::cout<<sum;
     std::cerr<<tTime.count();
   }else{
-    MPI_Status status;
-    MPI_Recv(&(params[0]), 7, MPI_DOUBLE, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-    while(status.MPI_TAG == 111){
+    MPI_Request* req = new NPI_Request[chunkNum];
+    for(int c=0;c<chunkNum;c++){
+      MPI_Irecv(&(params[c][0]), 7, MPI_DOUBLE, 0, MPI_ANY_TAG, MPI_COMM_WORLD,&req[c]);
+    }
+    MPI_Status s;
+    MPI_Wait(&req[0],&s);//wait for the first request
+    int chunkI = 0;
+    while(s[chunkI%chunkNum].MPI_TAG == 111){
       //for(int i=0;i<7;i++){
-	//std::cout<<params[i]<<",";
+	    //std::cout<<params[i]<<",";
       //}
       //std::cout<<std::endl;
       double* res = new double[1];
       res[0] = doIntegration(params[0],params[1],params[2],params[3],params[4],params[5],params[6]);
       //std::cout<<"\n"<<res[0]<<std::endl;
       MPI_Send(&(res[0]), 1, MPI_DOUBLE, 0, 111, MPI_COMM_WORLD);
-      MPI_Recv(&(params[0]), 7, MPI_DOUBLE, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+      MPI_Irecv(&(params[chunkI%chunkNum][0]), 7, MPI_DOUBLE, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &req[chunkI%chunkNum]);
+      MPI_Wait(&req[(chunkI+1)%chunkNum],&s);
+      chunkI++;
     }
   }
 
